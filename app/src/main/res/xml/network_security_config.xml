@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Allow cleartext (http) traffic ONLY to the specific IPTV stream hosts the
+  app actually uses. Everything else stays HTTPS-only, which is safer than
+  the previous usesCleartextTraffic="true" that opened http for the whole app.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">streamlock.net</domain>
+        <domain includeSubdomains="true">ghaasiflu.online</domain>
+        <domain includeSubdomains="true">bradosti.net</domain>
+        <domain includeSubdomains="true">lg.mncdn.com</domain>
+        <domain includeSubdomains="true">cdn4.skygo.mn</domain>
+        <domain includeSubdomains="true">fast.spacetoongo.com</domain>
+        <domain includeSubdomains="true">mixflixapp.online</domain>
+        <domain includeSubdomains="true">elahmad.ru</domain>
+        <domain includeSubdomains="true">marketplace-io-none-kode-steeeee.lol</domain>
+    </domain-config>
+</network-security-config>

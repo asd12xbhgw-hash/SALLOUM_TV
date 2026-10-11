@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- TV Antennas -->
+    <path
+        android:pathData="M40,25L54,40L68,25"
+        android:strokeWidth="3"
+        android:strokeColor="#00FFFF"
+        android:strokeLineCap="round" />
+
+    <!-- TV Frame -->
+    <path
+        android:pathData="M25,40h58c3,0 5,2 5,5v35c0,3 -2,5 -5,5h-58c-3,0 -5,-2 -5,-5v-35c0,-3 2,-5 5,-5z"
+        android:strokeWidth="4"
+        android:strokeColor="#00FFFF" />
+
+    <!-- Stylized 'S' inside -->
+    <path
+        android:pathData="M45,55c5,-5 15,0 15,5c0,10 -15,5 -15,15c0,5 10,10 15,5"
+        android:strokeWidth="6"
+        android:strokeColor="#00FFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+</vector>
