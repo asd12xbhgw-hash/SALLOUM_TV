@@ -1,6 +1,6 @@
 {
-  "versionName": "1.0.7",
-  "versionCode": 7,
-  "apkUrl": "https://github.com/asd12xbhgw-hash/SALLOUM_TV/releases/download/v1.0.7/app-release.apk",
-  "notes": "التطبيق يخرج تلقائيًا بعد تنزيل التحديث لتثبيته"
+  "versionName": "1.0.8",
+  "versionCode": 8,
+  "apkUrl": "https://github.com/asd12xbhgw-hash/SALLOUM_TV/releases/download/v1.0.8/app-release.apk",
+  "notes": "المؤشر يبقى على آخر قناة عند الخروج من المشغل"
 }

@@ -72,6 +72,15 @@ fun MainScreen() {
 
     // حفظ موضع التمرير حتى يرجع المؤشر لآخر قناة عند الخروج من المشغل
     val gridState = rememberLazyGridState()
+    val focusRequester = remember { FocusRequester() }
+
+    // عند الخروج من القناة، أعد التركيز على آخر قناة مختارة
+    LaunchedEffect(isFullScreen) {
+        if (!isFullScreen && selectedChannel != null) {
+            kotlinx.coroutines.delay(300)
+            focusRequester.requestFocus()
+        }
+    }
 
     // ===== حالة التحديث الذاتي =====
     val updateManager = remember { AppUpdateManager(activityContext.applicationContext) }
@@ -224,6 +233,8 @@ fun MainScreen() {
                     selectedCategory = selectedCategory,
                     isLoading = isLoading,
                     gridState = gridState,
+                    focusRequester = focusRequester,
+                    selectedChannel = selectedChannel,
                     onChannelClick = { channel ->
                         viewModel.selectChannel(channel)
                         isFullScreen = true
@@ -252,6 +263,8 @@ fun MainScreen() {
                     selectedCategory = selectedCategory,
                     isLoading = isLoading,
                     gridState = gridState,
+                    focusRequester = focusRequester,
+                    selectedChannel = selectedChannel,
                     onChannelClick = { channel ->
                         viewModel.selectChannel(channel)
                         isFullScreen = true
@@ -459,6 +472,8 @@ fun MainContent(
     selectedCategory: String,
     isLoading: Boolean,
     gridState: androidx.compose.foundation.lazy.grid.LazyGridState,
+    focusRequester: FocusRequester,
+    selectedChannel: Channel?,
     onChannelClick: (Channel) -> Unit
 ) {
     Column(
@@ -488,9 +503,11 @@ fun MainContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(currentChannels, key = { it.url + it.name }) { channel ->
+                    val isSelected = selectedChannel?.url == channel.url
                     ChannelItem(
                         channel = channel,
-                        onClick = { onChannelClick(channel) }
+                        onClick = { onChannelClick(channel) },
+                        modifier = if (isSelected) Modifier.focusRequester(focusRequester) else Modifier
                     )
                 }
             }
