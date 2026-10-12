@@ -159,11 +159,9 @@ fun MainScreen() {
     }
 
     if (showAboutDialog) {
-        AlertDialog(
-            onDismissRequest = { showAboutDialog = false },
-            onConfirmation = { showAboutDialog = false },
-            dialogTitle = "حول التطبيق",
-            dialogText = "SALLOUM TV هو مشغل IPTV بسيط. التطبيق لا يستضيف أي محتوى مرئي، وإنما يوفر واجهة لتشغيل الروابط المتاحة علنًا. نحن غير مسؤولين عن المحتوى الذي يتم بثه."
+        AboutDialog(
+            onDismiss = { showAboutDialog = false },
+            context = activityContext
         )
     }
 
@@ -493,6 +491,73 @@ fun MainContent(
             }
         }
     }
+}
+
+@Composable
+fun AboutDialog(onDismiss: () -> Unit, context: android.content.Context) {
+    val versionName = try {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    } catch (e: Exception) { "1.0.0" }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                // شعار التطبيق
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .background(Color.Cyan.copy(alpha = 0.2f), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("📺", fontSize = 36.sp)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("SALLOUM TV", fontWeight = FontWeight.Black, color = Color.Cyan, fontSize = 22.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("الإصدار: $versionName", color = Color.Gray, fontSize = 14.sp)
+            }
+        },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "مشغل IPTV بسيط وسريع. التطبيق لا يستضيف أي محتوى مرئي، وإنما يوفر واجهة لتشغيل الروابط المتاحة علنًا. نحن غير مسؤولين عن المحتوى الذي يتم بثه.",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                // زر مشاركة التطبيق
+                Surface(
+                    onClick = {
+                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, "شاهد SALLOUM TV — مشغل IPTV مجاني")
+                        }
+                        context.startActivity(android.content.Intent.createChooser(shareIntent, "مشاركة التطبيق"))
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.Cyan.copy(alpha = 0.15f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, tint = Color.Cyan, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("مشاركة التطبيق", color = Color.Cyan, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("إغلاق")
+            }
+        }
+    )
 }
 
 @Composable
