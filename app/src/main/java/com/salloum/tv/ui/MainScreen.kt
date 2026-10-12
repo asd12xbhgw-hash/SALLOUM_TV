@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -68,6 +69,9 @@ fun MainScreen() {
     var showExitDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
 
+    // حفظ موضع التمرير حتى يرجع المؤشر لآخر قناة عند الخروج من المشغل
+    val gridState = rememberLazyGridState()
+
     // ===== حالة التحديث الذاتي =====
     val updateManager = remember { AppUpdateManager(activityContext.applicationContext) }
     val updateScope = rememberCoroutineScope()
@@ -77,41 +81,41 @@ fun MainScreen() {
     var updateMessage by remember { mutableStateOf<String?>(null) }
 
     // رابط ملف update.json على GitHub Releases — عدّله حسب مستودعك
-    val UPDATE_JSON_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/update.json"
+    val UPDATE_JSON_URL = "https://raw.githubusercontent.com/asd12xbhgw-hash/SALLOUM_TV/main/update.json"
 
     fun checkForUpdate() {
-            if (isCheckingUpdate || isDownloading) return
-            updateScope.launch {
-                isCheckingUpdate = true
-                updateMessage = "جارٍ التحقق من التحديث..."
-                val info = updateManager.checkForUpdate(UPDATE_JSON_URL)
-                if (info.available) {
-                    updateMessage = "يوجد تحديث جديد (v${info.latestVersion})"
-                    val url = info.downloadUrl
-                    if (url.isNotEmpty()) {
-                        isCheckingUpdate = false
-                        isDownloading = true
-                        val apk = updateManager.downloadApk(url) { progress ->
-                            downloadProgress = progress
-                        }
-                        isDownloading = false
-                        if (apk != null) {
-                            updateMessage = null
-                            if (updateManager.canInstallPackages()) {
-                                updateManager.installApk(activityContext as android.app.Activity, apk)
-                            } else {
-                                updateManager.openInstallPermissionSettings(activityContext as android.app.Activity)
-                            }
-                        } else {
-                            updateMessage = "فشل تنزيل التحديث، حاول لاحقاً"
-                        }
+        if (isCheckingUpdate || isDownloading) return
+        updateScope.launch {
+            isCheckingUpdate = true
+            updateMessage = "جارٍ التحقق من التحديث..."
+            val info = updateManager.checkForUpdate(UPDATE_JSON_URL)
+            if (info.available) {
+                updateMessage = "يوجد تحديث جديد (v${info.latestVersion})"
+                val url = info.downloadUrl
+                if (url.isNotEmpty()) {
+                    isCheckingUpdate = false
+                    isDownloading = true
+                    val apk = updateManager.downloadApk(url) { progress ->
+                        downloadProgress = progress
                     }
-                } else {
-                    updateMessage = "أنت تستخدم أحدث نسخة ✅"
+                    isDownloading = false
+                    if (apk != null) {
+                        updateMessage = null
+                        if (updateManager.canInstallPackages()) {
+                            updateManager.installApk(activityContext as android.app.Activity, apk)
+                        } else {
+                            updateManager.openInstallPermissionSettings(activityContext as android.app.Activity)
+                        }
+                    } else {
+                        updateMessage = "فشل تنزيل التحديث، حاول لاحقاً"
+                    }
                 }
-                isCheckingUpdate = false
+            } else {
+                updateMessage = "أنت تستخدم أحدث نسخة ✅"
             }
+            isCheckingUpdate = false
         }
+    }
 
     // Control Status Bar and Navigation Bar (Hide when playing video)
     LaunchedEffect(isFullScreen) {
@@ -155,7 +159,7 @@ fun MainScreen() {
         )
     }
 
-    // رسالة التحديث (تظهر كـ Toast أو شريط)
+    // رسالة التحديث (تظهر كـ Toast)
     LaunchedEffect(updateMessage) {
         updateMessage?.let { msg ->
             Toast.makeText(activityContext, msg, Toast.LENGTH_SHORT).show()
@@ -198,6 +202,7 @@ fun MainScreen() {
                     categories = categories,
                     selectedCategory = selectedCategory,
                     isLoading = isLoading,
+                    gridState = gridState,
                     onChannelClick = { channel ->
                         viewModel.selectChannel(channel)
                         isFullScreen = true
@@ -225,6 +230,7 @@ fun MainScreen() {
                     categories = categories,
                     selectedCategory = selectedCategory,
                     isLoading = isLoading,
+                    gridState = gridState,
                     onChannelClick = { channel ->
                         viewModel.selectChannel(channel)
                         isFullScreen = true
@@ -431,6 +437,7 @@ fun MainContent(
     categories: Map<String, List<Channel>>,
     selectedCategory: String,
     isLoading: Boolean,
+    gridState: androidx.compose.foundation.lazy.grid.LazyGridState,
     onChannelClick: (Channel) -> Unit
 ) {
     Column(
@@ -451,6 +458,7 @@ fun MainContent(
 
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 160.dp),
+                state = gridState,
                 modifier = Modifier
                     .fillMaxSize()
                     .navigationBarsPadding(),
