@@ -68,6 +68,7 @@ fun MainScreen() {
     var isFullScreen by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
 
     // حفظ موضع التمرير حتى يرجع المؤشر لآخر قناة عند الخروج من المشغل
     val gridState = rememberLazyGridState()
@@ -91,6 +92,7 @@ fun MainScreen() {
             val info = updateManager.checkForUpdate(UPDATE_JSON_URL)
             if (info.available) {
                 updateMessage = "يوجد تحديث جديد (v${info.latestVersion})"
+                showUpdateDialog = true
                 val url = info.downloadUrl
                 if (url.isNotEmpty()) {
                     isCheckingUpdate = false
@@ -101,6 +103,7 @@ fun MainScreen() {
                     isDownloading = false
                     if (apk != null) {
                         updateMessage = null
+                        showUpdateDialog = false
                         if (updateManager.canInstallPackages()) {
                             updateManager.installApk(activityContext as android.app.Activity, apk)
                         } else {
@@ -115,6 +118,11 @@ fun MainScreen() {
             }
             isCheckingUpdate = false
         }
+    }
+
+    // فحص التحديث تلقائيًا عند فتح التطبيق (بدون حاجة المستخدم يضغط زر)
+    LaunchedEffect(Unit) {
+        checkForUpdate()
     }
 
     // Control Status Bar and Navigation Bar (Hide when playing video)
@@ -156,6 +164,16 @@ fun MainScreen() {
             onConfirmation = { showAboutDialog = false },
             dialogTitle = "حول التطبيق",
             dialogText = "SALLOUM TV هو مشغل IPTV بسيط. التطبيق لا يستضيف أي محتوى مرئي، وإنما يوفر واجهة لتشغيل الروابط المتاحة علنًا. نحن غير مسؤولين عن المحتوى الذي يتم بثه."
+        )
+    }
+
+    // نافذة التحديث — تظهر تلقائيًا عند وجود نسخة جديدة
+    if (showUpdateDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpdateDialog = false },
+            onConfirmation = { showUpdateDialog = false },
+            dialogTitle = "تحديث متاح",
+            dialogText = "يوجد إصدار جديد من التطبيق. سيتم تنزيله وتثبيته الآن."
         )
     }
 
