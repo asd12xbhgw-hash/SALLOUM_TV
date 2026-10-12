@@ -104,10 +104,15 @@ fun MainScreen() {
                     if (apk != null) {
                         updateMessage = null
                         showUpdateDialog = false
-                        if (updateManager.canInstallPackages()) {
-                            updateManager.installApk(activityContext as android.app.Activity, apk)
-                        } else {
-                            updateManager.openInstallPermissionSettings(activityContext as android.app.Activity)
+                        val activity = activityContext as? android.app.Activity
+                        if (activity != null) {
+                            if (updateManager.canInstallPackages()) {
+                                // افتح نافذة التثبيت ثم أغلق التطبيق حتى تظهر بوضوح
+                                updateManager.installApk(activity, apk)
+                                activity.finish()
+                            } else {
+                                updateManager.openInstallPermissionSettings(activity)
+                            }
                         }
                     } else {
                         updateMessage = "فشل تنزيل التحديث، حاول لاحقاً"
