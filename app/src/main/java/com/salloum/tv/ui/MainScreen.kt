@@ -81,7 +81,7 @@ fun MainScreen() {
     var updateMessage by remember { mutableStateOf<String?>(null) }
 
     // رابط ملف update.json على GitHub Releases — عدّله حسب مستودعك
-    val UPDATE_JSON_URL = "https://raw.githubusercontent.com/asd12xbhgw-hash/SALLOUM_TV/main/update.json"
+    val UPDATE_JSON_URL = "https://raw.githubusercontent.com/asd12xbhgw-hash/SALLOUM_TV/master/update.json"
 
     fun checkForUpdate() {
         if (isCheckingUpdate || isDownloading) return
