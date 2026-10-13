@@ -95,53 +95,15 @@ fun MainScreen() {
 
     fun checkForUpdate() {
         if (isCheckingUpdate || isDownloading) return
-        updateScope.launch {
-            isCheckingUpdate = true
-            updateMessage = "جارٍ التحقق من التحديث..."
-            val info = updateManager.checkForUpdate(UPDATE_JSON_URL)
-            if (info.available) {
-                updateMessage = "يوجد تحديث جديد (v${info.latestVersion})"
-                showUpdateDialog = true
-                val url = info.downloadUrl
-                if (url.isNotEmpty()) {
-                    isCheckingUpdate = false
-                    isDownloading = true
-                    val apk = updateManager.downloadApk(url) { progress ->
-                        downloadProgress = progress
-                    }
-                    isDownloading = false
-                    if (apk != null) {
-                        updateMessage = null
-                        showUpdateDialog = false
-                        val activity = activityContext as? android.app.Activity
-                        if (activity != null) {
-                            if (updateManager.canInstallPackages()) {
-                                // تحقق إذا التطبيق المثبت موقّع بنفس المفتاح
-                                val isSameSignature = updateManager.isSameSignature(activity)
-                                if (isSameSignature) {
-                                    // نفس التوقيع — التثبيت العادي ثم إغلاق التطبيق بالكامل
-                                    updateManager.installApk(activity, apk)
-                                    activity.finishAffinity()
-                                    activity.finish()
-                                    android.os.Process.killProcess(android.os.Process.myPid())
-                                    System.exit(0)
-                                } else {
-                                    // توقيع مختلف — اطلب من المستخدم حذف التطبيق القديم أولاً
-                                    showUpdateDialog = true
-                                    updateMessage = "لا يمكن تثبيت التحديث. احذف التطبيق القديم ثم أعد التثبيت."
-                                }
-                            } else {
-                                updateManager.openInstallPermissionSettings(activity)
-                            }
-                        }
-                    } else {
-                        updateMessage = "فشل تنزيل التحديث، حاول لاحقاً"
-                    }
-                }
-            } else {
-                updateMessage = "أنت تستخدم أحدث نسخة ✅"
-            }
-            isCheckingUpdate = false
+        // افتح موقع التحديث مباشرة في المتصفح
+        val intent = android.content.Intent(
+            android.content.Intent.ACTION_VIEW,
+            android.net.Uri.parse("https://asd12xbhgw-hash.github.io/SALLOUM_TV/")
+        )
+        try {
+            activityContext.startActivity(intent)
+        } catch (e: Exception) {
+            updateMessage = "تعذر فتح موقع التحديث"
         }
     }
 
