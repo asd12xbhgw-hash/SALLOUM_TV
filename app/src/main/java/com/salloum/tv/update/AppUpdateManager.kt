@@ -115,6 +115,31 @@ class AppUpdateManager(private val context: Context) {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         activity.startActivity(intent)
+
+        // إغلاق التطبيق بالكامل فورًا لمنع خطأ "التطبيق قيد الاستخدام" واستبدال الملفات بنجاح
+        try {
+            activity.finishAffinity()
+            activity.finish()
+            android.os.Process.killProcess(android.os.Process.myPid())
+            System.exit(0)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /** يفحص إذا التطبيق المثبت موقّع بنفس مفتاح التطبيق الحالي. */
+    fun isSameSignature(activity: Activity): Boolean {
+        return try {
+            val currentSig = activity.packageManager
+                .getPackageInfo(activity.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+                .signatures
+            val installedSig = activity.packageManager
+                .getPackageInfo(activity.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+                .signatures
+            currentSig.contentEquals(installedSig)
+        } catch (e: Exception) {
+            true // إذا فشل الفحص، افترض أن التوقيع متطابق
+        }
     }
 
     /** يفحص إذا التطبيق مخوّل يثبّت تطبيقات من مصادر خارجية (أندرويد 8+). */

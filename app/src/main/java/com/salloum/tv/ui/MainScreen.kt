@@ -116,13 +116,20 @@ fun MainScreen() {
                         val activity = activityContext as? android.app.Activity
                         if (activity != null) {
                             if (updateManager.canInstallPackages()) {
-                                // افتح نافذة التثبيت
-                                updateManager.installApk(activity, apk)
-                                // أغلق التطبيق بالكامل فورًا حتى يستبدل النظام الملفات بدون خطأ "التطبيق قيد الاستخدام"
-                                activity.finishAffinity()
-                                activity.finish()
-                                android.os.Process.killProcess(android.os.Process.myPid())
-                                System.exit(0)
+                                // تحقق إذا التطبيق المثبت موقّع بنفس المفتاح
+                                val isSameSignature = updateManager.isSameSignature(activity)
+                                if (isSameSignature) {
+                                    // نفس التوقيع — التثبيت العادي ثم إغلاق التطبيق بالكامل
+                                    updateManager.installApk(activity, apk)
+                                    activity.finishAffinity()
+                                    activity.finish()
+                                    android.os.Process.killProcess(android.os.Process.myPid())
+                                    System.exit(0)
+                                } else {
+                                    // توقيع مختلف — اطلب من المستخدم حذف التطبيق القديم أولاً
+                                    showUpdateDialog = true
+                                    updateMessage = "لا يمكن تثبيت التحديث. احذف التطبيق القديم ثم أعد التثبيت."
+                                }
                             } else {
                                 updateManager.openInstallPermissionSettings(activity)
                             }
