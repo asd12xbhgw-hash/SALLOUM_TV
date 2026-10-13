@@ -116,9 +116,13 @@ fun MainScreen() {
                         val activity = activityContext as? android.app.Activity
                         if (activity != null) {
                             if (updateManager.canInstallPackages()) {
-                                // افتح نافذة التثبيت ثم أغلق التطبيق حتى تظهر بوضوح
+                                // افتح نافذة التثبيت
                                 updateManager.installApk(activity, apk)
+                                // أغلق التطبيق بالكامل فورًا حتى يستبدل النظام الملفات بدون خطأ "التطبيق قيد الاستخدام"
+                                activity.finishAffinity()
                                 activity.finish()
+                                android.os.Process.killProcess(android.os.Process.myPid())
+                                System.exit(0)
                             } else {
                                 updateManager.openInstallPermissionSettings(activity)
                             }

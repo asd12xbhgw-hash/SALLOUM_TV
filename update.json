@@ -1,6 +1,6 @@
 {
-  "versionName": "1.0.8",
-  "versionCode": 8,
-  "apkUrl": "https://github.com/asd12xbhgw-hash/SALLOUM_TV/releases/download/v1.0.8/app-release.apk",
-  "notes": "المؤشر يبقى على آخر قناة عند الخروج من المشغل"
+  "versionName": "1.0.9",
+  "versionCode": 9,
+  "apkUrl": "https://github.com/asd12xbhgw-hash/SALLOUM_TV/releases/download/v1.0.9/app-release.apk",
+  "notes": "إغلاق التطبيق بالكامل بعد بدء التثبيت لتجنب خطأ التطبيق قيد الاستخدام"
 }
