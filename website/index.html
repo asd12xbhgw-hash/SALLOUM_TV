@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SALLOUM TV - التحديث والتحميل</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: linear-gradient(135deg, #0D1B2A 0%, #000000 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(0,255,255,0.2);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .logo {
+            font-size: 64px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #00FFFF;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .version {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .desc {
+            color: #ccc;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 12px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-download {
+            background: #00FFFF;
+            color: #000;
+        }
+        .btn-download:hover { box-shadow: 0 8px 25px rgba(0,255,255,0.4); }
+        .btn-cancel {
+            background: transparent;
+            color: #ff5555;
+            border: 1px solid #ff5555;
+        }
+        .btn-cancel:hover { background: rgba(255,85,85,0.1); }
+        .note {
+            color: #666;
+            font-size: 12px;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">📺</div>
+        <h1>SALLOUM TV</h1>
+        <div class="version">الإصدار الحالي: 1.0.16</div>
+        <div class="desc">
+            مشغل IPTV بسيط وسريع.<br>
+            حمّل أحدث إصدار من التطبيق هنا.
+        </div>
+        <a href="https://github.com/asd12xbhgw-hash/SALLOUM_TV/releases/download/v1.0.16/app-release.apk" class="btn btn-download" download>
+            ⬇️ تحميل التحديث
+        </a>
+        <a href="#" class="btn btn-cancel" onclick="window.close(); return false;">
+            إلغاء
+        </a>
+        <div class="note">
+            إذا ظهرت رسالة "تعارض الحزمة"، احذف التطبيق القديم أولاً ثم ثبّت الجديد.
+        </div>
+    </div>
+</body>
+</html>
