@@ -8,6 +8,14 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- صلاحية رؤية حزم التثبيت (Package Visibility) المطلوبة لفتح ملفات APK في أندرويد الحديث -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.android.package-archive" />
+        </intent>
+    </queries>
+
     <uses-feature
         android:name="android.software.leanback"
         android:required="false" />

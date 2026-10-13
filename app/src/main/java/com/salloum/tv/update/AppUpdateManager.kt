@@ -116,14 +116,13 @@ class AppUpdateManager(private val context: Context) {
         }
         activity.startActivity(intent)
 
-        // إغلاق التطبيق بالكامل فورًا لمنع خطأ "التطبيق قيد الاستخدام" واستبدال الملفات بنجاح
+        // إغلاق التطبيق بالكامل وبشكل قسري لمنع بقائه في الخلفية
         try {
             activity.finishAffinity()
-            activity.finish()
             android.os.Process.killProcess(android.os.Process.myPid())
-            System.exit(0)
+            Runtime.getRuntime().halt(0)
         } catch (e: Exception) {
-            e.printStackTrace()
+            System.exit(0)
         }
     }
 
