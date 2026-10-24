@@ -91,12 +91,36 @@ class AppUpdateManager(private val context: Context) {
                             }
                         }
                     }
-                    apkFile
+
+                    // تحقق أن الملف مكتمل وليس مقطوعاً أو صفحة HTML (منع خطأ "فشل في تحليل الحزمة")
+                    val sizeOk = apkFile.exists() && apkFile.length() > 1024 &&
+                        (total <= 0 || apkFile.length() == total)
+                    if (sizeOk && isCompleteApk(apkFile)) {
+                        apkFile
+                    } else {
+                        apkFile.delete()
+                        null
+                    }
                 }
             } catch (e: Exception) {
                 null
             }
         }
+
+    /**
+     * يتأكد أن الملف ZIP كامل: يفشل إذا كان مقطوعاً لأن فهرس الملفات (central directory)
+     * يكون في نهاية الملف، ويجب أن يحتوي على AndroidManifest.xml و classes.dex.
+     */
+    private fun isCompleteApk(file: File): Boolean {
+        return try {
+            java.util.zip.ZipFile(file).use { zip ->
+                zip.getEntry("AndroidManifest.xml") != null &&
+                    zip.getEntry("classes.dex") != null
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     /**
      * يطلّع نافذة تثبيت الـ APK المنزّل.

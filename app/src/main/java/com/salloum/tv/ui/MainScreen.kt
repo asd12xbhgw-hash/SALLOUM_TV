@@ -95,15 +95,51 @@ fun MainScreen() {
 
     fun checkForUpdate() {
         if (isCheckingUpdate || isDownloading) return
-        // افتح موقع التحديث مباشرة في المتصفح
-        val intent = android.content.Intent(
-            android.content.Intent.ACTION_VIEW,
-            android.net.Uri.parse("https://asd12xbhgw-hash.github.io/SALLOUM_TV/")
-        )
-        try {
-            activityContext.startActivity(intent)
-        } catch (e: Exception) {
-            updateMessage = "تعذر فتح موقع التحديث"
+        updateScope.launch {
+            isCheckingUpdate = true
+            updateMessage = "جارٍ التحقق من التحديث..."
+            val info = updateManager.checkForUpdate(UPDATE_JSON_URL)
+            if (info.available) {
+                // تحديث اختياري — اعرض نافذة فيها "تحديث الآن" و"لاحقًا"
+                showUpdateDialog = true
+                updateMessage = "يوجد تحديث جديد (v${info.latestVersion})"
+            } else {
+                updateMessage = "أنت تستخدم أحدث نسخة ✅"
+            }
+            isCheckingUpdate = false
+        }
+    }
+
+    // تنزيل وتثبيت التحديث (اختياري — يُستدعى عند الضغط "تحديث الآن")
+    fun startUpdate() {
+        if (isDownloading) return
+        updateScope.launch {
+            isDownloading = true
+            updateMessage = "جارٍ تنزيل التحديث..."
+            val info = updateManager.checkForUpdate(UPDATE_JSON_URL)
+            val url = info.downloadUrl
+            if (url.isNotEmpty()) {
+                val apk = updateManager.downloadApk(url) { progress ->
+                    downloadProgress = progress
+                }
+                isDownloading = false
+                if (apk != null) {
+                    val activity = activityContext as? android.app.Activity
+                    if (activity != null) {
+                        if (updateManager.canInstallPackages()) {
+                            updateManager.installApk(activity, apk)
+                            activity.finishAffinity()
+                            activity.finish()
+                            android.os.Process.killProcess(android.os.Process.myPid())
+                            System.exit(0)
+                        } else {
+                            updateManager.openInstallPermissionSettings(activity)
+                        }
+                    }
+                } else {
+                    updateMessage = "فشل تنزيل التحديث، حاول لاحقاً"
+                }
+            }
         }
     }
 
@@ -152,13 +188,21 @@ fun MainScreen() {
         )
     }
 
-    // نافذة التحديث — تظهر تلقائيًا عند وجود نسخة جديدة
+    // نافذة التحديث الاختياري — تظهر تلقائيًا عند وجود نسخة جديدة
     if (showUpdateDialog) {
         AlertDialog(
             onDismissRequest = { showUpdateDialog = false },
-            onConfirmation = { showUpdateDialog = false },
-            dialogTitle = "تحديث متاح",
-            dialogText = "يوجد إصدار جديد من التطبيق. سيتم تنزيله وتثبيته الآن."
+            title = { Text("تحديث متاح") },
+            text = { Text("يوجد إصدار جديد من التطبيق. هل تريد تحديثه الآن؟") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUpdateDialog = false
+                    startUpdate()
+                }) { Text("تحديث الآن") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUpdateDialog = false }) { Text("لاحقًا") }
+            }
         )
     }
 
