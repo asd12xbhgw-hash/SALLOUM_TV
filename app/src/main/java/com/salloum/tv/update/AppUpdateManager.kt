@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,6 +14,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
 
 /**
  * نظام تحديث ذاتي بدون Google Play.
@@ -20,6 +22,10 @@ import java.io.FileOutputStream
  * ينزّل الـ APK الجديد ويطلّع نافذة التثبيت.
  */
 class AppUpdateManager(private val context: Context) {
+
+    companion object {
+        private const val TAG = "AppUpdateManager"
+    }
 
     private val client = OkHttpClient()
 
@@ -38,9 +44,11 @@ class AppUpdateManager(private val context: Context) {
     suspend fun checkForUpdate(updateJsonUrl: String): UpdateInfo =
         withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "checkForUpdate: fetching $updateJsonUrl")
                 val request = Request.Builder().url(updateJsonUrl).build()
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
+                        Log.e(TAG, "checkForUpdate: HTTP ${response.code} from $updateJsonUrl")
                         return@withContext UpdateInfo(false, "", "", "")
                     }
                     val json = JSONObject(response.body?.string() ?: "{}")
@@ -55,9 +63,11 @@ class AppUpdateManager(private val context: Context) {
                         .toInt()
 
                     val available = versionCode > currentVersionCode
+                    Log.d(TAG, "checkForUpdate: current=$currentVersionCode remote=$versionCode available=$available url=$downloadUrl")
                     UpdateInfo(available, latestVersion, downloadUrl, notes)
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "checkForUpdate: exception", e)
                 UpdateInfo(false, "", "", "")
             }
         }
@@ -69,9 +79,13 @@ class AppUpdateManager(private val context: Context) {
     suspend fun downloadApk(downloadUrl: String, onProgress: ((Int) -> Unit)? = null): File? =
         withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "downloadApk: downloading from $downloadUrl")
                 val request = Request.Builder().url(downloadUrl).build()
                 client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@withContext null
+                    if (!response.isSuccessful) {
+                        Log.e(TAG, "downloadApk: HTTP ${response.code} from $downloadUrl")
+                        return@withContext null
+                    }
 
                     val body = response.body ?: return@withContext null
                     val total = body.contentLength()
@@ -95,17 +109,65 @@ class AppUpdateManager(private val context: Context) {
                     // تحقق أن الملف مكتمل وليس مقطوعاً أو صفحة HTML (منع خطأ "فشل في تحليل الحزمة")
                     val sizeOk = apkFile.exists() && apkFile.length() > 1024 &&
                         (total <= 0 || apkFile.length() == total)
+                    Log.d(TAG, "downloadApk: downloaded=${apkFile.length()} expected=$total sizeOk=$sizeOk")
                     if (sizeOk && isCompleteApk(apkFile)) {
+                        Log.d(TAG, "downloadApk: APK صالح، SHA-256=${sha256(apkFile)}")
                         apkFile
                     } else {
+                        Log.e(TAG, "downloadApk: فشل التحقق — الملف غير مكتمل أو تالف (sizeOk=$sizeOk)")
                         apkFile.delete()
                         null
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "downloadApk: exception", e)
                 null
             }
         }
+
+    /** يحسب SHA-256 للملف (للتشخيص والتحقق). */
+    private fun sha256(file: File): String {
+        return try {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(8192)
+                var bytes: Int
+                while (input.read(buffer).also { bytes = it } != -1) {
+                    digest.update(buffer, 0, bytes)
+                }
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            "error"
+        }
+    }
+
+    /**
+     * يتحقق أن الـ APK المنزّل موقّع بنفس مفتاح التطبيق المثبت.
+     * يمنع "التطبيق غير مثبّت" الناتج عن تعارض التوقيع (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
+     */
+    fun isApkSignedWithSameKey(apkFile: File): Boolean {
+        return try {
+            val pm = context.packageManager
+            val installed = pm.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+            val installedSig = installed.signatures?.firstOrNull()?.toByteArray()
+
+            // نقرأ توقيع الـ APK المنزّل عبر getPackageArchiveInfo
+            val archiveInfo = pm.getPackageArchiveInfo(
+                apkFile.absolutePath,
+                android.content.pm.PackageManager.GET_SIGNATURES
+            )
+            val apkSig = archiveInfo?.signatures?.firstOrNull()?.toByteArray()
+
+            val same = installedSig != null && apkSig != null &&
+                java.security.MessageDigest.isEqual(installedSig, apkSig)
+            Log.d(TAG, "isApkSignedWithSameKey: $same")
+            same
+        } catch (e: Exception) {
+            Log.e(TAG, "isApkSignedWithSameKey: exception (لا يمكن التحقق)", e)
+            true // إذا تعذّر التحقق، لا نمنع التثبيت
+        }
+    }
 
     /**
      * يتأكد أن الملف ZIP كامل: يفشل إذا كان مقطوعاً لأن فهرس الملفات (central directory)
@@ -132,22 +194,38 @@ class AppUpdateManager(private val context: Context) {
             "${context.packageName}.fileprovider",
             apkFile
         )
+        Log.d(TAG, "installApk: uri=$uri file=${apkFile.absolutePath} size=${apkFile.length()}")
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "application/vnd.android.package-archive")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        activity.startActivity(intent)
 
-        // إغلاق التطبيق بالكامل وبشكل قسري لمنع بقائه في الخلفية
         try {
-            activity.finishAffinity()
-            android.os.Process.killProcess(android.os.Process.myPid())
-            Runtime.getRuntime().halt(0)
+            activity.startActivity(intent)
+            Log.d(TAG, "installApk: intent أُرسل بنجاح إلى PackageInstaller")
         } catch (e: Exception) {
-            System.exit(0)
+            Log.e(TAG, "installApk: فشل إرسال intent", e)
+            return
         }
+
+        // إغلاق التطبيق بالكامل وبشكل قسري لمنع بقائه في الخلفية.
+        // نؤجّل القتل قليلاً حتى يبدأ PackageInstaller نشاطه.
+        Thread {
+            try {
+                Thread.sleep(500)
+            } catch (e: InterruptedException) {
+                // تجاهل
+            }
+            try {
+                activity.finishAffinity()
+                android.os.Process.killProcess(android.os.Process.myPid())
+                Runtime.getRuntime().halt(0)
+            } catch (e: Exception) {
+                System.exit(0)
+            }
+        }.start()
     }
 
     /** يفحص إذا التطبيق المثبت موقّع بنفس مفتاح التطبيق الحالي. */
@@ -159,8 +237,11 @@ class AppUpdateManager(private val context: Context) {
             val installedSig = activity.packageManager
                 .getPackageInfo(activity.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
                 .signatures
-            currentSig.contentEquals(installedSig)
+            val same = currentSig.contentEquals(installedSig)
+            Log.d(TAG, "isSameSignature: $same")
+            same
         } catch (e: Exception) {
+            Log.e(TAG, "isSameSignature: exception", e)
             true // إذا فشل الفحص، افترض أن التوقيع متطابق
         }
     }
@@ -168,7 +249,9 @@ class AppUpdateManager(private val context: Context) {
     /** يفحص إذا التطبيق مخوّل يثبّت تطبيقات من مصادر خارجية (أندرويد 8+). */
     fun canInstallPackages(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.packageManager.canRequestPackageInstalls()
+            val can = context.packageManager.canRequestPackageInstalls()
+            Log.d(TAG, "canInstallPackages: $can (SDK ${Build.VERSION.SDK_INT})")
+            can
         } else {
             true
         }
@@ -177,6 +260,7 @@ class AppUpdateManager(private val context: Context) {
     /** يفتح شاشة إعدادات السماح بالتثبيت من مصادر خارجية. */
     fun openInstallPermissionSettings(activity: Activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d(TAG, "openInstallPermissionSettings: فتح إعدادات السماح بالتثبيت")
             val intent = Intent(
                 android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                 Uri.parse("package:${context.packageName}")

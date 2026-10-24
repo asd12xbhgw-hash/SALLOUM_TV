@@ -127,18 +127,23 @@ fun MainScreen() {
                     val activity = activityContext as? android.app.Activity
                     if (activity != null) {
                         if (updateManager.canInstallPackages()) {
-                            updateManager.installApk(activity, apk)
-                            activity.finishAffinity()
-                            activity.finish()
-                            android.os.Process.killProcess(android.os.Process.myPid())
-                            System.exit(0)
+                            // تحقق أن الـ APK المنزّل موقّع بنفس مفتاح النسخة المثبتة
+                            if (updateManager.isApkSignedWithSameKey(apk)) {
+                                updateManager.installApk(activity, apk)
+                                // لا نقتل العملية هنا — installApk يتولى ذلك بعد تأخير
+                            } else {
+                                updateMessage = "توقيع التحديث مختلف عن النسخة المثبتة — لا يمكن التحديث"
+                            }
                         } else {
+                            updateMessage = "يجب السماح بالتثبيت من مصادر خارجية"
                             updateManager.openInstallPermissionSettings(activity)
                         }
                     }
                 } else {
-                    updateMessage = "فشل تنزيل التحديث، حاول لاحقاً"
+                    updateMessage = "فشل تنزيل التحديث أو الملف تالف، حاول لاحقاً"
                 }
+            } else {
+                updateMessage = "لا يوجد رابط تحميل"
             }
         }
     }
